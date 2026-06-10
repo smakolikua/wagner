@@ -1,0 +1,43 @@
+databases:
+  - name: fahrtenbuch-db
+    plan: starter
+    databaseName: fahrtenbuch
+    user: fahrtenbuch
+
+services:
+  - type: worker
+    name: fahrtenbuch-bot
+    runtime: python
+    plan: starter
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && python -m bot.main
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fahrtenbuch-db
+          property: connectionString
+      - key: BOT_WEBHOOK_URL
+        value: ""
+      - key: TIMEZONE
+        value: Europe/Berlin
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FILE
+        value: logs/bot.log
+      - key: ADMIN_TELEGRAM_ID
+        sync: false
+      - key: STORAGE_BOT_TOKEN
+        sync: false
+      - key: STORAGE_CHAT_ID
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false

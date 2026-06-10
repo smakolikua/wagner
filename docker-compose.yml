@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  # ── Telegram Bot ─────────────────────────────────────────────────────────
+  bot:
+    build:
+      context: .
+      target: runtime
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    networks:
+      - fahrt_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fahrtenbuch
+      POSTGRES_USER: fahrt_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - fahrt_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fahrt_user -d fahrtenbuch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── DB migrations (run once on startup) ──────────────────────────────────
+  migrate:
+    build:
+      context: .
+      target: runtime
+    env_file: .env
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fahrt_net
+    restart: "no"
+
+  # ── Adminer (тільки для dev) ──────────────────────────────────────────────
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - fahrt_net
+    profiles:
+      - dev
+
+volumes:
+  pgdata:
+
+networks:
+  fahrt_net:
+    driver: bridge

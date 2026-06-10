@@ -1,0 +1,17 @@
+.env
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.venv311/
+venv/
+logs/
+*.log
+.mplconfig/
+.DS_Store
+dist/
+build/
+*.egg-info/
